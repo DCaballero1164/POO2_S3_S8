@@ -31,7 +31,7 @@ public class VentanaAsignarEntrega extends JFrame {
         this.controlador = controlador;
         this.ventanaListaPedidos = ventanaListaPedidos;
 
-        setTitle("Asignar Repartidor / Iniciar Entrega");
+        setTitle("SpeedFast - Asignar Repartidor / Iniciar Entrega");
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setContentPane(panel1);
         setSize(900, 600);
