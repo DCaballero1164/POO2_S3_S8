@@ -8,6 +8,8 @@ import model.Repartidor;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.sql.Date;
 import java.sql.Time;
 import java.util.List;
@@ -23,9 +25,11 @@ public class VentanaAsignarEntrega extends JFrame {
 
     private Controlador controlador;
     private DefaultTableModel modeloHistorial;
+    private VentanaListaPedidos ventanaListaPedidos; // referencia a la ventana de lista de pedidos
 
-    public VentanaAsignarEntrega(Controlador controlador) {
+    public VentanaAsignarEntrega(Controlador controlador, VentanaListaPedidos ventanaListaPedidos) {
         this.controlador = controlador;
+        this.ventanaListaPedidos = ventanaListaPedidos;
 
         setTitle("Asignar Repartidor / Iniciar Entrega");
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -33,28 +37,34 @@ public class VentanaAsignarEntrega extends JFrame {
         setSize(900, 600);
         setLocationRelativeTo(null);
 
-        // Inicializar modelo de historial UNA sola vez
         modeloHistorial = new DefaultTableModel(
                 new Object[]{"Dirección", "Tipo", "Estado", "Fecha", "Hora", "Repartidor"}, 0);
         tablaHistorialRepartidores.setModel(modeloHistorial);
-        tablaHistorialRepartidores.getTableHeader().setReorderingAllowed(false);
+        tablaHistorialRepartidores.getTableHeader().setVisible(true);
 
         cargarPedidosPendientes();
         cargarRepartidoresDisponibles();
         cargarHistorialEntregas();
 
-        // Acción del botón ejecutar
-        ejecutarAcciónButton.addActionListener(e -> {
-            String accion = (String) comboBox1.getSelectedItem();
+        ejecutarAcciónButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String accion = (String) comboBox1.getSelectedItem();
 
-            if ("Realizar Entrega".equals(accion)) {
-                asignarEntrega();
-            } else if ("Agregar Repartidor".equals(accion)) {
-                new VentanaAgregarRepartidor(controlador, VentanaAsignarEntrega.this).setVisible(true);
-            } else if ("Eliminar Repartidor".equals(accion)) {
-                eliminarRepartidorSeleccionado();
+                if ("Realizar Entrega".equals(accion)) {
+                    asignarEntrega();
+                } else if ("Agregar Repartidor".equals(accion)) {
+                    new VentanaAgregarRepartidor(controlador, VentanaAsignarEntrega.this).setVisible(true);
+                } else if ("Eliminar Repartidor".equals(accion)) {
+                    eliminarRepartidorSeleccionado();
+                }
             }
         });
+    }
+
+    // Setter para enlazar la ventana de lista de pedidos después de instanciar
+    public void setVentanaListaPedidos(VentanaListaPedidos ventanaListaPedidos) {
+        this.ventanaListaPedidos = ventanaListaPedidos;
     }
 
     public void cargarPedidosPendientes() {
@@ -74,7 +84,7 @@ public class VentanaAsignarEntrega extends JFrame {
             });
         }
         tablaPedidos.setModel(modeloPedidos);
-        tablaPedidos.getTableHeader().setReorderingAllowed(false); // mostrar títulos
+        tablaPedidos.getTableHeader().setVisible(true);
     }
 
     public void cargarRepartidoresDisponibles() {
@@ -90,11 +100,11 @@ public class VentanaAsignarEntrega extends JFrame {
             });
         }
         tablaRepartidores.setModel(modeloRepartidores);
-        tablaRepartidores.getTableHeader().setReorderingAllowed(false); // mostrar títulos
+        tablaRepartidores.getTableHeader().setVisible(true);
     }
 
     public void cargarHistorialEntregas() {
-        modeloHistorial.setRowCount(0); // limpiar tabla
+        modeloHistorial.setRowCount(0);
         List<Entrega> entregas = controlador.obtenerEntregas();
 
         for (Entrega e : entregas) {
@@ -111,7 +121,7 @@ public class VentanaAsignarEntrega extends JFrame {
             });
         }
         tablaHistorialRepartidores.setModel(modeloHistorial);
-        tablaHistorialRepartidores.getTableHeader().setReorderingAllowed(false); // mostrar títulos
+        tablaHistorialRepartidores.getTableHeader().setVisible(true);
     }
 
     public void asignarEntrega() {
@@ -143,13 +153,16 @@ public class VentanaAsignarEntrega extends JFrame {
 
         if (guardadoEntrega && pedido != null) {
             JOptionPane.showMessageDialog(this, "Entrega asignada correctamente.");
+            if (ventanaListaPedidos != null) {
+                ventanaListaPedidos.cargarPedidos(); // refrescar lista de pedidos
+            }
         } else {
             JOptionPane.showMessageDialog(this, "Error al asignar la entrega.");
         }
 
         cargarPedidosPendientes();
         cargarRepartidoresDisponibles();
-        cargarHistorialEntregas(); // refrescar historial siempre
+        cargarHistorialEntregas();
     }
 
     public void eliminarRepartidorSeleccionado() {

@@ -7,45 +7,53 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 public class VentanaPrincipal extends JFrame {
-    private JButton registrarPedidoButton;                      //Boton para registrar pedido
-    private JButton listarPedidosButton;                        //Boton para mostrar la tabla
-    private JButton asignarRepartidorIniciarEntregaButton;      //Boton para asignar repartidor
-    private JPanel mainPanel;                                   // este panel lo genera el .form
+    private JButton registrarPedidoButton;
+    private JButton listarPedidosButton;
+    private JButton asignarRepartidorIniciarEntregaButton;
+    private JPanel mainPanel;
 
-    // Se llama a la clase Controlador
     private Controlador controlador;
+    private VentanaAsignarEntrega ventanaAsignarEntrega;
+    private VentanaListaPedidos ventanaListaPedidos;
 
     public VentanaPrincipal(Controlador controlador) {
         this.controlador = controlador;
 
-        setTitle("SpeedFast");        //Titulo
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);     //Accion al cerrar la ventana.
-        setContentPane(mainPanel);                          // enlaza el panel del .form
-        pack();                                             // ajusta el tamaño según los componentes
+        setTitle("SpeedFast");
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setContentPane(mainPanel);
+        pack();
+        setLocationRelativeTo(null);
 
-        setLocationRelativeTo(null); //Centrar ventana
+        // Primero instanciamos las ventanas
+        ventanaAsignarEntrega = new VentanaAsignarEntrega(controlador, null);
+        ventanaListaPedidos = new VentanaListaPedidos(controlador, ventanaAsignarEntrega);
 
-        // Acciones de los botones
+        // Enlazamos la referencia cruzada
+        ventanaAsignarEntrega.setVentanaListaPedidos(ventanaListaPedidos);
+
+        // Acción: registrar pedido
         registrarPedidoButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                new VentanaRegistroPedido(controlador).setVisible(true);
+                new VentanaRegistroPedido(controlador, ventanaAsignarEntrega, ventanaListaPedidos).setVisible(true);
             }
         });
 
+        // Acción: listar pedidos
         listarPedidosButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                new VentanaListaPedidos(controlador).setVisible(true);
+                ventanaListaPedidos.setVisible(true);
             }
         });
 
+        // Acción: asignar repartidor / iniciar entrega
         asignarRepartidorIniciarEntregaButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                new VentanaAsignarEntrega(controlador).setVisible(true);
+                ventanaAsignarEntrega.setVisible(true);
             }
         });
     }
 }
-

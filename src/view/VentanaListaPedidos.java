@@ -5,6 +5,8 @@ import model.Pedido;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.List;
 
 public class VentanaListaPedidos extends JFrame {
@@ -15,33 +17,41 @@ public class VentanaListaPedidos extends JFrame {
 
     private DefaultTableModel modelo;
     private Controlador controlador;
+    private VentanaAsignarEntrega ventanaAsignarEntrega; // referencia a la ventana de asignar entrega
 
-    public VentanaListaPedidos(Controlador controlador) {
+    public VentanaListaPedidos(Controlador controlador, VentanaAsignarEntrega ventanaAsignarEntrega) {
         this.controlador = controlador;
+        this.ventanaAsignarEntrega = ventanaAsignarEntrega;
 
-        setTitle("SpeedFast - Lista de Pedidos");               // Título
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);      // Acción al cerrar
-        setContentPane(panel1);                                 // Panel raíz del .form
-        pack();                                                 // Ajusta tamaño
-        setLocationRelativeTo(null);                            // Centrar ventana
+        setTitle("SpeedFast - Lista de Pedidos");
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setContentPane(panel1);
+        pack();
+        setLocationRelativeTo(null);
 
-        // Configurar modelo de la tabla
         modelo = new DefaultTableModel(new Object[]{"ID", "Dirección", "Tipo", "Estado"}, 0);
         table1.setModel(modelo);
+        table1.getTableHeader().setVisible(true);
 
-        // Acción del botón refrescar
-        refrescarButton.addActionListener(e -> refrescarTabla());
+        refrescarButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                cargarPedidos();
+            }
+        });
 
-        // Acción del botón borrar
-        borrarButton.addActionListener(e -> eliminarSeleccionado());
+        borrarButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                eliminarSeleccionado();
+            }
+        });
 
-        // Cargar pedidos al abrir la ventana
-        refrescarTabla();
+        cargarPedidos();
     }
 
-    // Metodo que refresca los datos de la tabla
-    private void refrescarTabla() {
-        modelo.setRowCount(0); // limpia la tabla
+    public void cargarPedidos() {
+        modelo.setRowCount(0);
         List<Pedido> pedidos = controlador.obtenerPedidos();
         for (Pedido p : pedidos) {
             modelo.addRow(new Object[]{
@@ -53,7 +63,6 @@ public class VentanaListaPedidos extends JFrame {
         }
     }
 
-    // Metodo para eliminar el pedido seleccionado
     private void eliminarSeleccionado() {
         int fila = table1.getSelectedRow();
         if (fila == -1) {
@@ -61,12 +70,18 @@ public class VentanaListaPedidos extends JFrame {
             return;
         }
 
-        int id = (int) modelo.getValueAt(fila, 0); // obtiene el ID de la fila seleccionada
+        int id = (int) modelo.getValueAt(fila, 0);
         boolean elimina = controlador.eliminarPedido(id);
 
         if (elimina) {
             JOptionPane.showMessageDialog(this, "Pedido eliminado con éxito.");
-            refrescarTabla();
+            cargarPedidos();
+
+            // refrescar también la ventana de asignar entrega
+            if (ventanaAsignarEntrega != null) {
+                ventanaAsignarEntrega.cargarPedidosPendientes();
+                ventanaAsignarEntrega.cargarHistorialEntregas();
+            }
         } else {
             JOptionPane.showMessageDialog(this, "Error al eliminar el pedido.");
         }
