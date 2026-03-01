@@ -10,75 +10,90 @@ public class RepartidorDAOImpl implements RepartidorDAO {
 
     @Override
     public boolean create(Repartidor repartidor) {
-        return false;
+        String sql = "INSERT INTO repartidor (nombre) VALUES (?)";
+        try (Connection con = ConexionDB.conectar();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, repartidor.getNombre());
+            return ps.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     @Override
     public Repartidor buscarPorId(int id) {
-        return null;
+        String sql = "SELECT * FROM repartidor WHERE id = ?";
+        try (Connection con = ConexionDB.conectar();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return new Repartidor(
+                            rs.getInt("id"),
+                            rs.getString("nombre")
+                    );
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null; // si no se encuentra el repartidor
     }
 
     @Override
     public List<Repartidor> readAll() {
-        return List.of();
+        List<Repartidor> lista = new ArrayList<>();
+        String sql = "SELECT * FROM repartidor";
+        try (Connection con = ConexionDB.conectar();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                lista.add(new Repartidor(
+                        rs.getInt("id"),
+                        rs.getString("nombre")
+                ));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return lista;
     }
+
 
     @Override
     public boolean update(Repartidor repartidor) {
-        return false;
+        String sql = "UPDATE repartidor SET nombre = ? WHERE id = ?";
+        try (Connection con = ConexionDB.conectar();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, repartidor.getNombre());
+            ps.setInt(2, repartidor.getId());
+
+            return ps.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     @Override
-    public boolean delete(Repartidor repartidor) {
-        return false;
-    }
+    public boolean delete(int id) {
+        String sql = "DELETE FROM repartidor WHERE id = ?";
+        try (Connection con = ConexionDB.conectar();
+             PreparedStatement ps = con.prepareStatement(sql)) {
 
-    // Listar todos los repartidores
-    public List<Repartidor> listarTodos() {
-        List<Repartidor> lista = new ArrayList<>();
-        String sql = "SELECT * FROM repartidor";
-        try (Connection conn = ConexionDB.conectar();
-             Statement st = conn.createStatement();
-             ResultSet rs = st.executeQuery(sql)) {
-            while (rs.next()) {
-                lista.add(new Repartidor(rs.getInt("id"), rs.getString("nombre")));
-            }
+            ps.setInt(1, id);
+            return ps.executeUpdate() > 0;
+
         } catch (SQLException e) {
             e.printStackTrace();
+            return false;
         }
-        return lista;
-    }
-
-    // Guardar un nuevo repartidor
-    public void guardar(Repartidor repartidor) {
-        String sql = "INSERT INTO repartidor (nombre) VALUES (?)";
-        try (Connection conn = ConexionDB.conectar();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, repartidor.getNombre());
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    // Listar repartidores disponibles (no asignados a pedidos en reparto)
-    public List<Repartidor> listarDisponibles() {
-        List<Repartidor> lista = new ArrayList<>();
-        String sql = "SELECT * FROM repartidor r " +
-                "WHERE r.id NOT IN (" +
-                "   SELECT e.id_repartidor FROM entrega e " +
-                "   JOIN pedido p ON e.id_pedido = p.id " +
-                "   WHERE p.estado = 'EN_REPARTO'" +
-                ")";
-        try (Connection conn = ConexionDB.conectar();
-             Statement st = conn.createStatement();
-             ResultSet rs = st.executeQuery(sql)) {
-            while (rs.next()) {
-                lista.add(new Repartidor(rs.getInt("id"), rs.getString("nombre")));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return lista;
     }
 }

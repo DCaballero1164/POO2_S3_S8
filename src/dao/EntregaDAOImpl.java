@@ -13,72 +13,63 @@ public class EntregaDAOImpl implements EntregaDAO {
 
     @Override
     public boolean create(Entrega entrega) {
-        return false;
+        String sql = "INSERT INTO entrega (id_pedido, id_repartidor, fecha, hora) VALUES (?, ?, ?, ?)";
+        try (Connection conn = ConexionDB.conectar();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, entrega.getIdPedido());
+            ps.setInt(2, entrega.getIdRepartidor());
+            ps.setDate(3, entrega.getFecha());   // java.sql.Date
+            ps.setTime(4, entrega.getHora());    // java.sql.Time
+
+            return ps.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     @Override
     public Entrega buscarPorId(int id) {
-        return null;
+        String sql = "SELECT * FROM entrega WHERE id = ?";
+        try (Connection conn = ConexionDB.conectar();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return new Entrega(
+                            rs.getInt("id"),
+                            rs.getInt("id_pedido"),
+                            rs.getInt("id_repartidor"),
+                            rs.getDate("fecha"),
+                            rs.getTime("hora")
+                    );
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null; // si no se encuentra la entrega
     }
 
     @Override
     public List<Entrega> readAll() {
-        return List.of();
-    }
-
-    @Override
-    public boolean update(Entrega entrega) {
-        return false;
-    }
-
-    @Override
-    public boolean delete(Entrega entrega) {
-        return false;
-    }
-
-    // CREATE
-    public void guardar(Entrega entrega) {
-        String sql = "INSERT INTO entregas (id_pedido, id_repartidor, fecha, hora) VALUES (?, ?, ?, ?)";
-        try (Connection conn = ConexionDB.conectar();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, entrega.getIdPedido());
-            ps.setInt(2, entrega.getIdRepartidor());
-            ps.setDate(3, entrega.getFecha());
-            ps.setTime(4, entrega.getHora());
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    // READ (listar todas las entregas con datos de pedido y repartidor)
-    public List<Entrega> listar() {
         List<Entrega> entregas = new ArrayList<>();
-        String sql = "SELECT e.id, e.id_pedido, e.id_repartidor, e.fecha, e.hora, " +
-                "p.direccion, p.tipo, p.estado, r.nombre AS repartidor " +
-                "FROM entregas e " +
-                "JOIN pedidos p ON e.id_pedido = p.id " +
-                "JOIN repartidores r ON e.id_repartidor = r.id";
-
+        String sql = "SELECT * FROM entrega";
         try (Connection conn = ConexionDB.conectar();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
-                Entrega entrega = new Entrega(
+                entregas.add(new Entrega(
                         rs.getInt("id"),
                         rs.getInt("id_pedido"),
                         rs.getInt("id_repartidor"),
                         rs.getDate("fecha"),
                         rs.getTime("hora")
-                );
-                // Campos adicionales para mostrar en la tabla
-                entrega.setDireccionPedido(rs.getString("direccion"));
-                entrega.setTipoPedido(rs.getString("tipo"));
-                entrega.setEstadoPedido(rs.getString("estado"));
-                entrega.setNombreRepartidor(rs.getString("repartidor"));
-
-                entregas.add(entrega);
+                ));
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -86,31 +77,38 @@ public class EntregaDAOImpl implements EntregaDAO {
         return entregas;
     }
 
-    // UPDATE
-    public void actualizar(Entrega entrega) {
-        String sql = "UPDATE entregas SET id_pedido=?, id_repartidor=?, fecha=?, hora=? WHERE id=?";
+    @Override
+    public boolean update(Entrega entrega) {
+        String sql = "UPDATE entrega SET id_pedido = ?, id_repartidor = ?, fecha = ?, hora = ? WHERE id = ?";
         try (Connection conn = ConexionDB.conectar();
              PreparedStatement ps = conn.prepareStatement(sql)) {
+
             ps.setInt(1, entrega.getIdPedido());
             ps.setInt(2, entrega.getIdRepartidor());
             ps.setDate(3, entrega.getFecha());
             ps.setTime(4, entrega.getHora());
             ps.setInt(5, entrega.getId());
-            ps.executeUpdate();
+
+            return ps.executeUpdate() > 0;
+
         } catch (SQLException e) {
             e.printStackTrace();
+            return false;
         }
     }
 
-    // DELETE
-    public void eliminar(int id) {
-        String sql = "DELETE FROM entregas WHERE id=?";
+    @Override
+    public boolean delete(int id) {
+        String sql = "DELETE FROM entrega WHERE id = ?";
         try (Connection conn = ConexionDB.conectar();
              PreparedStatement ps = conn.prepareStatement(sql)) {
+
             ps.setInt(1, id);
-            ps.executeUpdate();
+            return ps.executeUpdate() > 0;
+
         } catch (SQLException e) {
             e.printStackTrace();
+            return false;
         }
     }
 }

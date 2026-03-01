@@ -1,12 +1,12 @@
 package main;
 
-import data.RegistroPedido;
+import controller.Controlador;
 import view.VentanaPrincipal;
 
 public class Main {
     public static void main(String[] args) {
-        RegistroPedido registro = new RegistroPedido();
-        VentanaPrincipal vp = new VentanaPrincipal(registro);
-        vp.setVisible(true);
+        Controlador controlador = new Controlador();                // Crea el controlador
+        VentanaPrincipal vp = new VentanaPrincipal(controlador);    // Crea la ventana principal
+        vp.setVisible(true);                                        // Muestra la ventana principal
     }
 }

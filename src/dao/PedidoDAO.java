@@ -15,7 +15,7 @@ public interface PedidoDAO {
 
     boolean update(Pedido pedido);
 
-    boolean delete(Pedido pedido);
+    boolean delete(int id);
 
 
 }

@@ -1,6 +1,6 @@
 package view;
 
-import data.RegistroPedido;
+import controller.Controlador;
 import model.Pedido;
 import model.TipoPedido;
 import model.EstadoPedido;
@@ -13,7 +13,11 @@ public class VentanaRegistroPedido extends JFrame {
     private JButton guardarButton;          // Botón guardar
     private JPanel registroPanel;           // panel raíz del .form
 
-    public VentanaRegistroPedido(RegistroPedido registro) {
+    private Controlador controlador;
+
+    public VentanaRegistroPedido(Controlador controlador) {
+        this.controlador = controlador;
+
         setTitle("SpeedFast - Registro de pedido");
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setContentPane(registroPanel);
@@ -37,11 +41,15 @@ public class VentanaRegistroPedido extends JFrame {
             // Crear pedido con estado inicial PENDIENTE
             Pedido nuevoPedido = new Pedido(direccion, tipo, EstadoPedido.PENDIENTE);
 
-            // Guardar en BD
-            registro.agregarPedido(nuevoPedido);
+            // Guardar en BD a través del controlador
+            boolean exito = controlador.registrarPedido(nuevoPedido);
 
-            JOptionPane.showMessageDialog(this, "Pedido agregado con éxito.");
-            dispose();
+            if (exito) {
+                JOptionPane.showMessageDialog(this, "Pedido agregado con éxito.");
+                dispose();
+            } else {
+                JOptionPane.showMessageDialog(this, "Error al registrar el pedido.");
+            }
         });
     }
 }

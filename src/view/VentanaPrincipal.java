@@ -1,6 +1,6 @@
 package view;
 
-import data.RegistroPedido;
+import controller.Controlador;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -12,11 +12,11 @@ public class VentanaPrincipal extends JFrame {
     private JButton asignarRepartidorIniciarEntregaButton;      //Boton para asignar repartidor
     private JPanel mainPanel;                                   // este panel lo genera el .form
 
-    //Se llama a la clase RegistroPedido
-    private RegistroPedido registro;
+    // Se llama a la clase Controlador
+    private Controlador controlador;
 
-    public VentanaPrincipal(RegistroPedido registro) {
-        this.registro = registro;
+    public VentanaPrincipal(Controlador controlador) {
+        this.controlador = controlador;
 
         setTitle("SpeedFast");        //Titulo
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);     //Accion al cerrar la ventana.
@@ -29,21 +29,21 @@ public class VentanaPrincipal extends JFrame {
         registrarPedidoButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                new VentanaRegistroPedido(registro).setVisible(true);
+                new VentanaRegistroPedido(controlador).setVisible(true);
             }
         });
 
         listarPedidosButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                new VentanaListaPedidos(registro).setVisible(true);
+                new VentanaListaPedidos(controlador).setVisible(true);
             }
         });
 
         asignarRepartidorIniciarEntregaButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                new VentanaAsignarEntrega().setVisible(true);
+                new VentanaAsignarEntrega(controlador).setVisible(true);
             }
         });
     }

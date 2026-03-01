@@ -13,5 +13,5 @@ public interface EntregaDAO {
 
     boolean update(Entrega entrega);
 
-    boolean delete(Entrega entrega);
+    boolean delete(int id);
 }

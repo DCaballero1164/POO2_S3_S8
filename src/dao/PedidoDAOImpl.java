@@ -30,13 +30,32 @@ public class PedidoDAOImpl implements PedidoDAO {
 
     @Override
     public Pedido buscarPorId(int id) {
-        return null;
+        String sql = "SELECT * FROM pedido WHERE id = ?";
+        try (Connection con = ConexionDB.conectar();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return new Pedido(
+                            rs.getInt("id"),
+                            rs.getString("direccion"),
+                            TipoPedido.valueOf(rs.getString("tipo")),
+                            EstadoPedido.valueOf(rs.getString("estado"))
+                    );
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null; // si no se encuentra el pedido
     }
+
 
     @Override
     public List<Pedido> readAll() {
         List<Pedido> pedidos = new ArrayList<>();
-        String sql = "SELECT * FROM pedidos";
+        String sql = "SELECT * FROM pedido";
 
         try (Connection con = ConexionDB.conectar();
              PreparedStatement ps = con.prepareStatement(sql);
@@ -52,61 +71,54 @@ public class PedidoDAOImpl implements PedidoDAO {
                 pedidos.add(pedido);    // Agrega el pedido a la lista
             }
         } catch (SQLException e) {
-            e.printStackTrace(); // se informa el error
+            e.printStackTrace(); // mensaje donde se informa el error
         }
 
-        return pedidos; // (si hubo error, se devuelve lista vacía)
+        return pedidos; // retorna una lista vacia al no encontrar pedido
     }
 
 
 
     @Override
     public boolean update(Pedido pedido) {
-        String sql = "UPDATE pedidos SET estado = ? WHERE id = ?";
+        String sql = "UPDATE pedido SET direccion = ?, tipo = ?, estado = ? WHERE id = ?";
         try (Connection conn = ConexionDB.conectar();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            ps.setString(1, nuevoEstado.name()); // enum → String
-            ps.setInt(2, idPedido);
+            ps.setString(1, pedido.getDireccion());       // actualiza dirección
+            ps.setString(2, pedido.getTipo().name());     // enum TipoPedido → String
+            ps.setString(3, pedido.getEstado().name());   // enum EstadoPedido → String
+            ps.setInt(4, pedido.getId());                 // id del pedido
 
             int filas = ps.executeUpdate();
-            if (filas > 0) {
-                JOptionPane.showMessageDialog(null,
-                        "Estado del pedido actualizado correctamente.");
-                return true;
-            } else {
-                JOptionPane.showMessageDialog(null,
-                        "No se encontró el pedido con ID: " + idPedido);
-                return false;
-            }
+            return filas > 0; // true si se actualizó al menos una fila
 
         } catch (SQLException e) {
-            JOptionPane.showMessageDialog(null,
-                    "Error al actualizar estado: " + e.getMessage(),
-                    "Error", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
             return false;
         }
     }
 
 
     @Override
-    public boolean delete(Pedido pedido) {
-        return false;
-    }
-
-    }
-
-    public void actualizarEstado(int idPedido, EstadoPedido nuevoEstado) {
-        String sql = "UPDATE pedido SET estado = ? WHERE id = ?";
+    public boolean delete(int id) {
+        String sql = "DELETE FROM pedido WHERE id = ?";
         try (Connection conn = ConexionDB.conectar();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, nuevoEstado.name()); // enum → String
-            ps.setInt(2, idPedido);
-            ps.executeUpdate();
+
+            ps.setInt(1, id); // usa el id recibido como parámetro
+
+            int filas = ps.executeUpdate();
+            return filas > 0; // retorna true si se eliminó al menos una fila
+
         } catch (SQLException e) {
-            e.printStackTrace();
+            e.printStackTrace();    // mensaje
+            return false;
         }
     }
+
+}
+
 
 
 

@@ -14,6 +14,6 @@ public interface RepartidorDAO {
 
     boolean update(Repartidor repartidor);
 
-    boolean delete(Repartidor repartidor);
+    boolean delete(int id);
 
 }

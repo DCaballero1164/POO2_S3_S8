@@ -1,10 +1,10 @@
 package view;
 
-import dao.PedidoDAO;
-import dao.EntregaDAO;
+import controller.Controlador;
 import model.Pedido;
 import model.Entrega;
 import model.EstadoPedido;
+import model.Repartidor;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -13,64 +13,52 @@ import java.sql.Time;
 import java.util.List;
 
 public class VentanaAsignarEntrega extends JFrame {
-    // Componentes vinculados al .form
-    private JPanel panel1;             // Panel raíz del formulario
-    private JPanel mainPanel;          // Panel interno donde se organizan los elementos
-    private JTable tablaRepartidores;  // Tabla para mostrar repartidores
-    private JTable tablaPedidos;       // Tabla para mostrar pedidos
-    private JButton asignarButton;     // Botón para asignar entrega
-    private JButton actualizarButton;  // Botón para refrescar datos
-    private JTable tablaHistorialRepatidores;
+    private JPanel panel1;
+    private JPanel mainPanel;
+    private JTable tablaRepartidores;
+    private JTable tablaPedidos;
+    private JButton ejecutarAcciónButton;
+    private JTable tablaHistorialRepartidores;
+    private JComboBox<String> comboBox1;
 
-    public VentanaAsignarEntrega() {
+    private Controlador controlador;
+    private DefaultTableModel modeloHistorial;
+
+    public VentanaAsignarEntrega(Controlador controlador) {
+        this.controlador = controlador;
+
         setTitle("Asignar Repartidor / Iniciar Entrega");
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setContentPane(panel1);   // Usa el panel raíz del .form
-        setSize(800, 600);        // Tamaño suficiente para mostrar ambas tablas
-        setLocationRelativeTo(null);   // Centra la ventana en pantalla
+        setContentPane(panel1);
+        setSize(900, 600);
+        setLocationRelativeTo(null);
 
-        // Cargar datos iniciales en las tablas
+        // Inicializar modelo de historial UNA sola vez
+        modeloHistorial = new DefaultTableModel(
+                new Object[]{"Dirección", "Tipo", "Estado", "Fecha", "Hora", "Repartidor"}, 0);
+        tablaHistorialRepartidores.setModel(modeloHistorial);
+        tablaHistorialRepartidores.getTableHeader().setReorderingAllowed(false);
+
         cargarPedidosPendientes();
         cargarRepartidoresDisponibles();
+        cargarHistorialEntregas();
 
-        // Acción del botón asignar
-        asignarButton.addActionListener(e -> asignarEntrega());
+        // Acción del botón ejecutar
+        ejecutarAcciónButton.addActionListener(e -> {
+            String accion = (String) comboBox1.getSelectedItem();
 
-        // Acción del botón actualizar
-        actualizarButton.addActionListener(e -> {
-            cargarPedidosPendientes();
-            cargarRepartidoresDisponibles();
+            if ("Realizar Entrega".equals(accion)) {
+                asignarEntrega();
+            } else if ("Agregar Repartidor".equals(accion)) {
+                new VentanaAgregarRepartidor(controlador, VentanaAsignarEntrega.this).setVisible(true);
+            } else if ("Eliminar Repartidor".equals(accion)) {
+                eliminarRepartidorSeleccionado();
+            }
         });
-
-        // Añadir títulos visibles a las tablas
-        JScrollPane pedidosScroll = new JScrollPane(tablaPedidos);
-        pedidosScroll.setBorder(BorderFactory.createTitledBorder("Pedidos pendientes"));
-
-        JScrollPane repartidoresScroll = new JScrollPane(tablaRepartidores);
-        repartidoresScroll.setBorder(BorderFactory.createTitledBorder("Repartidores disponibles"));
-
-        // Usamos un JSplitPane para mostrar ambas tablas lado a lado
-        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
-                pedidosScroll, repartidoresScroll);
-        splitPane.setDividerLocation(400); // Posición del divisor
-
-        // Reorganizamos el mainPanel para incluir el splitPane y los botones
-        mainPanel.removeAll();
-        mainPanel.setLayout(new java.awt.BorderLayout());
-
-        // Panel inferior con los botones
-        JPanel botonesPanel = new JPanel();
-        botonesPanel.add(asignarButton);
-        botonesPanel.add(actualizarButton);
-
-        mainPanel.add(splitPane, java.awt.BorderLayout.CENTER);
-        mainPanel.add(botonesPanel, java.awt.BorderLayout.SOUTH);
     }
 
-    // Metodo para cargar pedidos pendientes en la tabla
-    private void cargarPedidosPendientes() {
-        PedidoDAO pedidoDAO = new PedidoDAO();
-        List<Pedido> pedidosPendientes = pedidoDAO.listarTodos().stream()
+    public void cargarPedidosPendientes() {
+        List<Pedido> pedidosPendientes = controlador.obtenerPedidos().stream()
                 .filter(p -> p.getEstado() == EstadoPedido.PENDIENTE)
                 .toList();
 
@@ -86,54 +74,99 @@ public class VentanaAsignarEntrega extends JFrame {
             });
         }
         tablaPedidos.setModel(modeloPedidos);
+        tablaPedidos.getTableHeader().setReorderingAllowed(false); // mostrar títulos
     }
 
-    // Metodo para cargar repartidores disponibles en la tabla
-    private void cargarRepartidoresDisponibles() {
+    public void cargarRepartidoresDisponibles() {
+        List<Repartidor> repartidores = controlador.obtenerRepartidores();
+
         DefaultTableModel modeloRepartidores = new DefaultTableModel(
                 new Object[]{"ID", "Nombre"}, 0);
 
-        // Añadimos manualmente 3 repartidores de ejemplo
-        modeloRepartidores.addRow(new Object[]{1, "Juan Pérez"});
-        modeloRepartidores.addRow(new Object[]{2, "María González"});
-        modeloRepartidores.addRow(new Object[]{3, "Carlos Ramírez"});
-
+        for (Repartidor r : repartidores) {
+            modeloRepartidores.addRow(new Object[]{
+                    r.getId(),
+                    r.getNombre()
+            });
+        }
         tablaRepartidores.setModel(modeloRepartidores);
+        tablaRepartidores.getTableHeader().setReorderingAllowed(false); // mostrar títulos
     }
 
-    // Metodo que asigna un repartidor a un pedido
-    private void asignarEntrega() {
+    public void cargarHistorialEntregas() {
+        modeloHistorial.setRowCount(0); // limpiar tabla
+        List<Entrega> entregas = controlador.obtenerEntregas();
+
+        for (Entrega e : entregas) {
+            Pedido p = controlador.buscarPedidoPorId(e.getIdPedido());
+            Repartidor r = controlador.buscarRepartidorPorId(e.getIdRepartidor());
+
+            modeloHistorial.addRow(new Object[]{
+                    (p != null ? p.getDireccion() : "Pedido eliminado"),
+                    (p != null ? p.getTipo() : "-"),
+                    (p != null ? p.getEstado() : "-"),
+                    e.getFecha(),
+                    e.getHora(),
+                    (r != null ? r.getNombre() : "Repartidor eliminado")
+            });
+        }
+        tablaHistorialRepartidores.setModel(modeloHistorial);
+        tablaHistorialRepartidores.getTableHeader().setReorderingAllowed(false); // mostrar títulos
+    }
+
+    public void asignarEntrega() {
         int filaPedido = tablaPedidos.getSelectedRow();
         int filaRepartidor = tablaRepartidores.getSelectedRow();
 
-        // Validación: debe haber selección en ambas tablas
         if (filaPedido == -1 || filaRepartidor == -1) {
             JOptionPane.showMessageDialog(this, "Seleccione un pedido y un repartidor.");
             return;
         }
 
-        // Obtenemos los IDs seleccionados
         int idPedido = (int) tablaPedidos.getValueAt(filaPedido, 0);
         int idRepartidor = (int) tablaRepartidores.getValueAt(filaRepartidor, 0);
 
-        // Registrar entrega en BD
-        EntregaDAO entregaDAO = new EntregaDAO();
         Entrega nuevaEntrega = new Entrega(
                 idPedido,
                 idRepartidor,
                 new Date(System.currentTimeMillis()),
                 new Time(System.currentTimeMillis())
         );
-        entregaDAO.guardar(nuevaEntrega);
 
-        // Actualizar estado del pedido
-        PedidoDAO pedidoDAO = new PedidoDAO();
-        pedidoDAO.actualizarEstado(idPedido, EstadoPedido.EN_REPARTO);
+        boolean guardadoEntrega = controlador.registrarEntrega(nuevaEntrega);
 
-        JOptionPane.showMessageDialog(this, "Entrega asignada correctamente.");
+        Pedido pedido = controlador.buscarPedidoPorId(idPedido);
+        if (pedido != null) {
+            pedido.setEstado(EstadoPedido.EN_REPARTO);
+            controlador.actualizarPedido(pedido);
+        }
 
-        // Refrescar tablas para mostrar cambios
+        if (guardadoEntrega && pedido != null) {
+            JOptionPane.showMessageDialog(this, "Entrega asignada correctamente.");
+        } else {
+            JOptionPane.showMessageDialog(this, "Error al asignar la entrega.");
+        }
+
         cargarPedidosPendientes();
         cargarRepartidoresDisponibles();
+        cargarHistorialEntregas(); // refrescar historial siempre
+    }
+
+    public void eliminarRepartidorSeleccionado() {
+        int fila = tablaRepartidores.getSelectedRow();
+        if (fila == -1) {
+            JOptionPane.showMessageDialog(this, "Seleccione un repartidor para eliminar.");
+            return;
+        }
+
+        int idRepartidor = (int) tablaRepartidores.getValueAt(fila, 0);
+        boolean eliminado = controlador.eliminarRepartidor(idRepartidor);
+
+        if (eliminado) {
+            JOptionPane.showMessageDialog(this, "Repartidor eliminado correctamente.");
+            cargarRepartidoresDisponibles();
+        } else {
+            JOptionPane.showMessageDialog(this, "Error al eliminar repartidor.");
+        }
     }
 }
