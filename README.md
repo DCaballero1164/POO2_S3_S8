@@ -1,4 +1,4 @@
-# 🧠 Actividad Sumativa 3 - Semana 8 - Desarrollo Orientado a Objetos II
+# 🧠 AS 3 - Semana 8 - Desarrollo Orientado a Objetos II
 
 
 👤 Autor del proyecto
